@@ -1,0 +1,84 @@
+services:
+  traefik:
+    image: traefik
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --log=true
+      - --log.level=DEBUG
+      - --pilot.dashboard=false
+      - --tracing=true
+      - --accesslog=true
+    ports:
+      - 80:80
+      - 8080:8080
+    networks:
+      - kafka_network
+    volumes:
+      -   /var/run/docker.sock:/var/run/docker.sock:ro
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    ports:
+      - 2181:2181
+    networks:
+      - kafka_network
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: 'yes'
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - 9092
+    deploy:
+      replicas: 3
+    networks:
+      - kafka_network
+    environment:
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_NUM_PARTITIONS: 4
+    restart: on-failure
+    depends_on:
+      - zookeeper
+
+  kafka-init:
+    image: bitnami/kafka:latest
+    networks:
+      - kafka_network
+    command: [ "/bin/bash", "-c", "/topics.sh" ]
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+    depends_on:
+      kafka:
+        condition: service_started
+    volumes:
+      - type: bind
+        source: ./topics.sh
+        target: /topics.sh
+      - type: bind
+        source: ./topics.txt
+        target: /topics.txt
+    init: true
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+      JVM_OPTS: -Xms32M -Xmx64M
+      SERVER_SERVLET_CONTEXTPATH: /
+    expose:
+      - 9000
+    networks:
+      - kafka_network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.kafdrop.rule=Host(`kafdrop.localhost`)
+      - traefik.http.routers.kafdrop.entrypoints=web
+    depends_on:
+      - kafka
+networks:
+  kafka_network:
+    name: kafka_test_network
