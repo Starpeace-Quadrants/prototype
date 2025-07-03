@@ -20,6 +20,11 @@ services:
       - "traefik.http.routers.traefik.tls=false"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.auth-redirect.redirectregex.regex=^http://localhost/(.*)"
+      - "traefik.http.middlewares.auth-redirect.redirectregex.replacement=http://api.causevest.localhost/$${1}"
+      - "traefik.http.routers.auth-redirect.rule=Host(`localhost`) && PathPrefix(`/api/authentication/google/login`)"
+      - "traefik.http.routers.auth-redirect.service=noop@internal"
+      - "traefik.http.routers.auth-redirect.middlewares=auth-redirect"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./.docker/traefik/traefik.toml:/traefik.toml
@@ -70,8 +75,6 @@ services:
       KAFKA_BROKERCONNECT: kafka:9092
       JVM_OPTS: -Xms32M -Xmx64M
       SERVER_SERVLET_CONTEXTPATH: /
-    expose:
-      - 9000
     networks:
       - kafka_network
     labels:
@@ -103,6 +106,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.client.rule=Host(`client.localhost`)
       - traefik.http.routers.client.entrypoints=web
+      - traefik.http.services.client.loadbalancer.server.port=8080
     networks:
       - kafka_network
 networks:
