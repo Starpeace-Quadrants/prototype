@@ -21,8 +21,6 @@ services:
 
   zookeeper:
     image: bitnami/zookeeper:latest
-    ports:
-      - 2181:2181
     networks:
       - kafka_network
     environment:
@@ -30,8 +28,6 @@ services:
 
   kafka:
     image: bitnami/kafka:latest
-    ports:
-      - 9092
     deploy:
       replicas: 3
     networks:
@@ -85,8 +81,11 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/relay
-    ports:
-      - "8099:8099"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.relay.rule=Host(`relay.localhost`)
+      - traefik.http.routers.relay.entrypoints=web
+      - traefik.http.services.relay.loadbalancer.server.port=8099
     networks:
       - kafka_network
   client:
@@ -95,8 +94,10 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/client
-    ports:
-      - "4000:8080"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.client.rule=Host(`client.localhost`)
+      - traefik.http.routers.client.entrypoints=web
     networks:
       - kafka_network
 networks:

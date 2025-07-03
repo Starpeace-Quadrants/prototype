@@ -44,8 +44,10 @@ docker-compose up --build
 ```
 
 This will:
-- Start Traefik, Zookeeper, a Kafka cluster with three brokers, a helper container to create topics, and the Kafdrop UI
-- Expose each service on its default port
+- Start Traefik, Zookeeper, a Kafka cluster with three brokers, a helper container to create topics, the relay and client services, and the Kafdrop UI
+- Route the Kafdrop UI to `http://kafdrop.localhost` and the client to `http://client.localhost`
+- Expose the Traefik dashboard at `http://localhost:8080/dashboard/`
+- (Ensure your hosts file maps `kafdrop.localhost` and `client.localhost` to `127.0.0.1`)
 
 ---
 
