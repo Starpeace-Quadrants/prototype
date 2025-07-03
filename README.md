@@ -100,4 +100,4 @@ This removes containers and any created volumes.
 
 ## 📄 License
 
-MIT – See individual repos for more details.
+MIT – see [LICENSE](LICENSE.md) for details. See individual repos for more details.
