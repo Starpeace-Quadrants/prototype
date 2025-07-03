@@ -9,10 +9,11 @@ This prototype demonstrates a minimal event-driven architecture using Go microse
 
 | Service       | Description                                  | Port |
 |---------------|----------------------------------------------|------|
+| **Traefik**   | Reverse proxy and router                     | 80, 8080 |
 | **Zookeeper** | Coordination service for Kafka               | 2181 |
 | **Kafka**     | Message broker for event-based communication | 9092 |
-| **MongoDB**   | Persistent document database                 | 27017 |
-| **Auth**      | Go-based hybrid auth microservice            | 8080 |
+| **kafka-init**| Initializes Kafka topics                      | N/A |
+| **Kafdrop**   | Web UI for Kafka (via Traefik)               | 80 |
 
 ---
 
@@ -43,8 +44,7 @@ docker-compose up --build
 ```
 
 This will:
-- Build `kafka-base-environment-image` and `golang-kafka-hybrid-auth`
-- Start Zookeeper, Kafka, MongoDB, and your Go Auth service
+- Start Traefik, Zookeeper, a Kafka cluster with three brokers, a helper container to create topics, and the Kafdrop UI
 - Expose each service on its default port
 
 ---
@@ -94,7 +94,7 @@ To stop and clean up everything:
 docker-compose down -v
 ```
 
-This removes containers and the MongoDB volume.
+This removes containers and any created volumes.
 
 ---
 
