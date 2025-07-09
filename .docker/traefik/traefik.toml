@@ -12,11 +12,10 @@ insecure = true
   [entryPoints.websecure]
     address = ":443"
 
-[certificatesResolvers.default]
-  [certificatesResolvers.default.static]
-    [certificatesResolvers.default.static.certificates]
-      certFile = "/certs/cert.pem"
-      keyFile = "/certs/key.pem"
+[tls]
+  [[tls.certificates]]
+    certFile = "/certs/cert.pem"
+    keyFile = "/certs/key.pem"
 
 #[tracing]
 #  servicename = "tracing"

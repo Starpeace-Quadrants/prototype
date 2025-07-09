@@ -33,6 +33,7 @@ services:
       - kafka_network
     environment:
       ALLOW_ANONYMOUS_LOGIN: 'yes'
+      ZOO_MAX_CNXNS: 60
 
   kafka:
     image: bitnami/kafka:latest
@@ -44,6 +45,7 @@ services:
       ALLOW_PLAINTEXT_LISTENER: 'yes'
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_NUM_PARTITIONS: 4
+      KAFKA_CFG_PROCESS_ROLES: "broker"
     restart: on-failure
     depends_on:
       - zookeeper
