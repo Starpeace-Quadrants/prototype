@@ -82,6 +82,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.kafdrop.rule=Host(`kafdrop.localhost`)
       - traefik.http.routers.kafdrop.entrypoints=websecure
+      - traefik.http.services.kafdrop.loadbalancer.server.port=9000
     depends_on:
       - kafka
   relay:
@@ -109,6 +110,11 @@ services:
       - ../gk-kafka-client:/app
       - ../gk-kafka-client/certs:/app/certs
     working_dir: /app
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.client.rule=Host(`client.localhost`)
+      - traefik.http.routers.client.entrypoints=websecure
+      - traefik.http.services.client.loadbalancer.server.port=3000
     networks:
       - kafka_network
   auth:
