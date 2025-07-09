@@ -37,10 +37,11 @@ prototype/                    # This repo (contains the compose file)
 
 ## 🔐 Certificate Management
 
-Run `./generate-certs.sh` before starting the stack to create a local
-certificate authority and TLS certificates for the client and auth
-services. The script places the generated files in `certs/` and copies
-them into each service repository so the containers can mount them.
+Run `./generate-certs.sh` before starting the stack. It creates a local
+certificate authority and generates certificates for Traefik, the
+Kafdrop UI, the auth service and the client. The files are stored in the
+`certs/` directory and automatically copied into each service so Docker
+can mount them when the stack starts.
 
 ---
 
@@ -54,8 +55,8 @@ docker-compose up --build
 
 This will:
 - Start Traefik, Zookeeper, a Kafka cluster with three brokers, a helper container to create topics, the relay and client services, and the Kafdrop UI
-- Route the Kafdrop UI to `http://kafdrop.localhost` and the client to `http://client.localhost`
-- Expose the Traefik dashboard at `http://localhost:8080/dashboard/`
+- Route the Kafdrop UI to `https://kafdrop.localhost` and the client to `https://client.localhost`
+- Expose the Traefik dashboard at `https://monitor.localhost/dashboard/`
 - (Ensure your hosts file maps `kafdrop.localhost` and `client.localhost` to `127.0.0.1`)
 
 ---

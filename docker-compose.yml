@@ -117,7 +117,7 @@ services:
       dockerfile: Dockerfile
     container_name: gk-kafka-auth
     volumes:
-      - ../golang-kafka-auth:/app
+      - ../golang-kafka-hybrid-auth:/app
       - ../golang-kafka-hybrid-auth/certs:/app/certs
     working_dir: /app
     labels:

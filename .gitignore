@@ -1,2 +1,4 @@
 /.idea
 certs/
+/.docker/traefik/cert.pem
+/.docker/traefik/key.pem
