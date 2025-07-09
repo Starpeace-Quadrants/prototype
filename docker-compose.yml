@@ -1,6 +1,6 @@
 services:
   gk-traefik:
-    image: traefik:v2.6
+    image: traefik:v2.10
     container_name: gk-traefik
     restart: unless-stopped
     ports:
@@ -27,7 +27,7 @@ services:
       - ./.docker/traefik/key.pem:/certs/key.pem
 
   zookeeper:
-    image: bitnami/zookeeper:latest
+    image: bitnami/zookeeper:3.8.1
     container_name: gk-zookeeper
     networks:
       - kafka_network
@@ -36,7 +36,7 @@ services:
       ZOO_MAX_CNXNS: 60
 
   kafka:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:3.5.0
     deploy:
       replicas: 3
     networks:
@@ -51,7 +51,7 @@ services:
       - zookeeper
 
   kafka-init:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:3.5.0
     container_name: gk-kafka-init
     networks:
       - kafka_network
@@ -71,7 +71,7 @@ services:
     init: true
 
   kafdrop:
-    image: obsidiandynamics/kafdrop
+    image: obsidiandynamics/kafdrop:3.27.0
     container_name: gk-kafdrop
     environment:
       KAFKA_BROKERCONNECT: kafka:9092
