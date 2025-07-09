@@ -3,8 +3,20 @@ dashboard = true
 insecure = true
 
 [entryPoints]
-[entryPoints.web]
-address = ":80"
+  [entryPoints.web]
+    address = ":80"
+    [entryPoints.web.http.redirections.entryPoint]
+      to = "websecure"
+      scheme = "https"
+
+  [entryPoints.websecure]
+    address = ":443"
+
+[certificatesResolvers.default]
+  [certificatesResolvers.default.static]
+    [certificatesResolvers.default.static.certificates]
+      certFile = "/certs/cert.pem"
+      keyFile = "/certs/key.pem"
 
 #[tracing]
 #  servicename = "tracing"

@@ -1,10 +1,11 @@
 services:
-  traefik:
+  gk-traefik:
     image: traefik:v2.6
-    container_name: traefik
+    container_name: gk-traefik
     restart: unless-stopped
     ports:
       - "80:80" # HTTP
+      - "443:443" # HTTPS
       - "8080:8080" # Traefik Dashboard
     networks:
       - kafka_network
@@ -16,21 +17,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`monitor.localhost`)"
-      - "traefik.http.routers.traefik.entrypoints=web"
-      - "traefik.http.routers.traefik.tls=false"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.auth-redirect.redirectregex.regex=^http://localhost/(.*)"
-      - "traefik.http.middlewares.auth-redirect.redirectregex.replacement=http://api.causevest.localhost/$${1}"
-      - "traefik.http.routers.auth-redirect.rule=Host(`localhost`) && PathPrefix(`/api/authentication/google/login`)"
-      - "traefik.http.routers.auth-redirect.service=noop@internal"
-      - "traefik.http.routers.auth-redirect.middlewares=auth-redirect"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./.docker/traefik/traefik.toml:/traefik.toml
+      - ./.docker/traefik/cert.pem:/certs/cert.pem
+      - ./.docker/traefik/key.pem:/certs/key.pem
 
   zookeeper:
     image: bitnami/zookeeper:latest
+    container_name: gk-zookeeper
     networks:
       - kafka_network
     environment:
@@ -52,6 +50,7 @@ services:
 
   kafka-init:
     image: bitnami/kafka:latest
+    container_name: gk-kafka-init
     networks:
       - kafka_network
     command: [ "/bin/bash", "-c", "/topics.sh" ]
@@ -71,6 +70,7 @@ services:
 
   kafdrop:
     image: obsidiandynamics/kafdrop
+    container_name: gk-kafdrop
     environment:
       KAFKA_BROKERCONNECT: kafka:9092
       JVM_OPTS: -Xms32M -Xmx64M
@@ -80,19 +80,20 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.kafdrop.rule=Host(`kafdrop.localhost`)
-      - traefik.http.routers.kafdrop.entrypoints=web
+      - traefik.http.routers.kafdrop.entrypoints=websecure
     depends_on:
       - kafka
   relay:
     build:
       context: ../gk-kafka-relay
       dockerfile: Dockerfile
+    container_name: gk-kafka-relay
     volumes:
       - .:/relay
     labels:
       - traefik.enable=true
       - traefik.http.routers.relay.rule=Host(`relay.localhost`)
-      - traefik.http.routers.relay.entrypoints=web
+      - traefik.http.routers.relay.entrypoints=websecure
       - traefik.http.services.relay.loadbalancer.server.port=8099
     networks:
       - kafka_network
@@ -100,13 +101,28 @@ services:
     build:
       context: ../gk-kafka-client
       dockerfile: Dockerfile
+    container_name: gk-kafka-client
+    ports:
+      - "3000:3000"
     volumes:
-      - .:/client
+      - ../gk-kafka-client:/app
+      - ../gk-kafka-client/certs:/app/certs
+    working_dir: /app
+    networks:
+      - kafka_network
+  auth:
+    build:
+      context: ../golang-kafka-hybrid-auth
+      dockerfile: Dockerfile
+    container_name: gk-kafka-auth
+    volumes:
+      - ../golang-kafka-auth:/app
+    working_dir: /app
     labels:
       - traefik.enable=true
-      - traefik.http.routers.client.rule=Host(`client.localhost`)
-      - traefik.http.routers.client.entrypoints=web
-      - traefik.http.services.client.loadbalancer.server.port=8080
+      - traefik.http.routers.auth.rule=Host(`auth.localhost`)
+      - traefik.http.routers.auth.entrypoints=websecure
+      - traefik.http.services.auth.loadbalancer.server.port=3000
     networks:
       - kafka_network
 networks:
