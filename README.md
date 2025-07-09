@@ -35,6 +35,15 @@ prototype/                    # This repo (contains the compose file)
 
 ---
 
+## 🔐 Certificate Management
+
+Run `./generate-certs.sh` before starting the stack to create a local
+certificate authority and TLS certificates for the client and auth
+services. The script places the generated files in `certs/` and copies
+them into each service repository so the containers can mount them.
+
+---
+
 ## ▶️ Running the System
 
 From inside the `prototype/` folder:

@@ -45,7 +45,6 @@ services:
       ALLOW_PLAINTEXT_LISTENER: 'yes'
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_NUM_PARTITIONS: 4
-      KAFKA_CFG_PROCESS_ROLES: "broker"
     restart: on-failure
     depends_on:
       - zookeeper
@@ -119,6 +118,7 @@ services:
     container_name: gk-kafka-auth
     volumes:
       - ../golang-kafka-auth:/app
+      - ../golang-kafka-hybrid-auth/certs:/app/certs
     working_dir: /app
     labels:
       - traefik.enable=true
