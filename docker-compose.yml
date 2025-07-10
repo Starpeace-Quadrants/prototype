@@ -27,6 +27,7 @@ services:
       - ./.docker/traefik/key.pem:/certs/key.pem
 
   zookeeper:
+    platform: linux/arm64
     image: bitnami/zookeeper:3.8.1
     container_name: gk-zookeeper
     networks:
@@ -35,19 +36,62 @@ services:
       ALLOW_ANONYMOUS_LOGIN: 'yes'
       ZOO_MAX_CNXNS: 60
 
-  kafka:
+  kafka1:
+    platform: linux/arm64
     image: bitnami/kafka:3.5.0
-    deploy:
-      replicas: 3
+    hostname: kafka1
+    container_name: kafka1
     networks:
       - kafka_network
     environment:
-      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      KAFKA_BROKER_ID: 1
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_NUM_PARTITIONS: 4
-    restart: on-failure
-    depends_on:
-      - zookeeper
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  kafka2:
+    platform: linux/arm64
+    image: bitnami/kafka:3.5.0
+    hostname: kafka2
+    container_name: kafka2
+    networks:
+      - kafka_network
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  kafka3:
+    platform: linux/arm64
+    image: bitnami/kafka:3.5.0
+    hostname: kafka3
+    container_name: kafka3
+    networks:
+      - kafka_network
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   kafka-init:
     image: bitnami/kafka:3.5.0
@@ -58,7 +102,11 @@ services:
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
     depends_on:
-      kafka:
+      kafka1:
+        condition: service_started
+      kafka2:
+        condition: service_started
+      kafka3:
         condition: service_started
     volumes:
       - type: bind
@@ -69,22 +117,24 @@ services:
         target: /topics.txt
     init: true
 
-  kafdrop:
-    image: obsidiandynamics/kafdrop:3.27.0
-    container_name: gk-kafdrop
-    environment:
-      KAFKA_BROKERCONNECT: kafka:9092
-      JVM_OPTS: -Xms32M -Xmx64M
-      SERVER_SERVLET_CONTEXTPATH: /
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: gk-kafka-ui
     networks:
       - kafka_network
+    ports:
+      - "8081:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
     labels:
       - traefik.enable=true
-      - traefik.http.routers.kafdrop.rule=Host(`kafdrop.localhost`)
-      - traefik.http.routers.kafdrop.entrypoints=websecure
-      - traefik.http.services.kafdrop.loadbalancer.server.port=9000
-    depends_on:
-      - kafka
+      - traefik.http.routers.kafka-ui.rule=Host(`kafka-ui.localhost`)
+      - traefik.http.routers.kafka-ui.entrypoints=websecure
+      - traefik.http.routers.kafka-ui.tls=true
+      - traefik.http.services.kafka-ui.loadbalancer.server.port=8080
+
   relay:
     build:
       context: ../gk-kafka-relay

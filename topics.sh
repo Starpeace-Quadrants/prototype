@@ -1,13 +1,25 @@
-#!/usr/bin/env bash
+#!/bin/bash
+set -e
 
-echo "Beginning creation of default topics."
+echo "Creating Kafka topics..."
 
-topics="./topics.txt"
-while IFS= read -r line
-do
-  IFS=":" read -ra params <<< "$line"
-  /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic "${params[0]}" --replication-factor "${params[1]}" --partitions "${params[2]}"
-done < "$topics"
+KAFKA_BROKER="kafka:9092"
 
-echo -e 'Successfully created the following topics:'
-/opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-server kafka:9092
+while IFS=: read -r topic partitions replication; do
+  if [[ -z "$topic" || -z "$partitions" || -z "$replication" ]]; then
+    echo "Skipping malformed line: $topic:$partitions:$replication"
+    continue
+  fi
+
+  echo "Creating topic: $topic with $partitions partitions and RF=$replication"
+
+  kafka-topics.sh \
+    --bootstrap-server "$KAFKA_BROKER" \
+    --create \
+    --if-not-exists \
+    --topic "$topic" \
+    --partitions "$partitions" \
+    --replication-factor "$replication"
+done < /topics.txt
+
+echo "Kafka topics created."
